@@ -54,10 +54,10 @@ def setup_platform(
     name = config[CONF_NAME]
 
     # Add devices
-    add_entities([bobleha_relaiswifi(name, ip)])
+    add_entities([bobleha_ESP8266WifiRelay(name, ip)])
 
 
-class bobleha_relaiswifi(SwitchEntity):
+class bobleha_ESP8266WifiRelay(SwitchEntity):
     def __init__(self, name, ip) -> None:
         """Initialize an bobleha_relaiswifi."""
         _LOGGER.debug(f"**IP: {ip}")
