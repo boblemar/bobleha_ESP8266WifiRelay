@@ -1,43 +1,27 @@
 import logging
-from homeassistant.components.switch import SwitchEntity
+import socket
+
+from homeassistant.components.switch import PLATFORM_SCHEMA, SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
-from .custom_components.const import *
-import socket
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.helpers import config_validation as cv
+from homeassistant.const import CONF_FRIENDLY_NAME, CONF_IP_ADDRESS, CONF_NAME
 
 import voluptuous as vol
 
-from homeassistant.const import (
-    CONF_ALIAS,
-    CONF_IP_ADDRESS,
-    CONF_NAME,
-    CONF_ROOM,
-    SERVICE_TOGGLE,
-    SERVICE_TURN_OFF,
-    SERVICE_TURN_ON,
-    STATE_ON,
-)
+from .const import *
 
-from homeassistant.helpers import (
-    collection,
-    config_validation as cv,
-    entity,
-    entity_component,
-    event,
-    service,
-    storage,
-)
-
-from homeassistant.components.switch import PLATFORM_SCHEMA
-
-DOMAIN = "bobleha_relaiswifi"
+DOMAIN = "bobleha_ESP8266WifiRelay"
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {vol.Required(CONF_NAME): cv.string, vol.Required(CONF_IP_ADDRESS): cv.string}
+    {
+        vol.Required(CONF_NAME): cv.string,
+        vol.Required(CONF_IP_ADDRESS): cv.string,
+        vol.Optional(CONF_FRIENDLY_NAME): cv.string,
+    }
 )
 
 
@@ -54,7 +38,9 @@ def setup_platform(
     name = config[CONF_NAME]
 
     # Add devices
-    add_entities([bobleha_ESP8266WifiRelay(name, ip)])
+    entity = bobleha_ESP8266WifiRelay(name, ip)
+    entity.friendlyname = config[CONF_FRIENDLY_NAME]
+    add_entities([entity])
 
 
 class bobleha_ESP8266WifiRelay(SwitchEntity):
@@ -69,15 +55,23 @@ class bobleha_ESP8266WifiRelay(SwitchEntity):
 
     @property
     def name(self) -> str:
-        """Return the display name of this light."""
-        _LOGGER.debug(f"Name: {self._name}")
+        """Return the display name of this relay."""
         return self._name
 
     @property
     def ip(self) -> str:
-        """Return the display name of this light."""
-        _LOGGER.debug(f"IP: {self._ip}")
+        """Return the display ip address of this relay."""
         return self._ip
+
+    @property
+    def friendlyname(self) -> str:
+        """Return the display friendly name of this relay."""
+        return self._ip
+
+    @friendlyname.setter
+    def friendlyname(self, value):
+        """Sets the display friendly name of this relay."""
+        self._friendlyname = value
 
     @property
     def is_on(self) -> bool:
@@ -92,7 +86,7 @@ class bobleha_ESP8266WifiRelay(SwitchEntity):
     def turn_on(self, **kwargs) -> None:
         """Turn the entity on."""
         self.__state_is_on = True
-        self.__send_tcp_command(COMMAND_ON)
+        self.__send_tcp_command(COMMAND_SWITCH1_ON)
         _LOGGER.debug(f"Turn On")
 
     async def async_turn_on(self, **kwargs):
@@ -103,7 +97,7 @@ class bobleha_ESP8266WifiRelay(SwitchEntity):
     def turn_off(self, **kwargs):
         """Turn the entity off."""
         self.__state_is_on = False
-        self.__send_tcp_command(COMMAND_OFF)
+        self.__send_tcp_command(COMMAND_SWITCH1_OFF)
         _LOGGER.debug(f"Turn off")
 
     async def async_turn_off(self, **kwargs):
